@@ -52,6 +52,8 @@ void UTransporterComponent::OnTriggerActorDeactivated()
 
 }
 
+
+
 void UTransporterComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -98,6 +100,7 @@ void UTransporterComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 			
 		}
 	}
+	
 	AActor* Owner = GetOwner();
 	if ( Owner && Owner->HasAuthority() && M_bArePointsSet)
 	{

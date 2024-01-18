@@ -3,6 +3,8 @@
 
 #include "Mechanics/PressurePlate.h"
 
+#include "Kismet/KismetSystemLibrary.h"
+
 // Sets default values
 APressurePlate::APressurePlate()
 {

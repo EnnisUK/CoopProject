@@ -13,6 +13,9 @@
 #include "Particles/ParticleSystem.h"
 #include "Systems/MainGameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "Mechanics/MovableActor.h"
+#include "Mechanics/TriggerActor.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values
@@ -34,6 +37,11 @@ APlayerBaseClass::APlayerBaseClass()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
+	
+	M_PhysicsHandleComp = CreateDefaultSubobject<UPhysicsHandleComponent>("PhysicsHandleComponent");
+	M_PhysicsHandleComp->SetIsReplicated(true);
+
+
 
 }
 
@@ -126,15 +134,98 @@ void APlayerBaseClass::Sprint()
 	}
 }
 
+void APlayerBaseClass::Grab()
+{
+	if (!M_bIsGrabbed)
+	{
+		ServerRPC_GrabObject();
+	}
+	else
+	{
+		ServerRPC_DropObject();
+		
+	}
+}
 
 
 
+
+void APlayerBaseClass::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(APlayerBaseClass, M_bIsGrabbed, COND_OwnerOnly);
+}
+
+void APlayerBaseClass::ServerRPC_PickupObject_Implementation(UPrimitiveComponent* HitComponent, FVector Location, FRotator Rotation)
+{
+	M_PhysicsHandleComp->GrabComponentAtLocationWithRotation(HitComponent, NAME_None, Location, Rotation);
+	
+}
+
+void APlayerBaseClass::ServerRPC_ObjectMove_Implementation()
+{
+	if (HasAuthority())
+	{
+		FVector TargetLocation = GetCameraComponent()->GetComponentLocation() + GetCameraComponent()->GetForwardVector() * M_HoldDistance;
+		M_PhysicsHandleComp->SetTargetLocationAndRotation(TargetLocation, GetOwner()->GetActorRotation());	
+	}
+
+}
+
+void APlayerBaseClass::ServerRPC_GrabObject_Implementation()
+{
+	FCollisionQueryParams QueryParams;
+	TArray<AActor*> ActorsToIgnore;
+	FVector Start = GetActorLocation();
+	FVector End = Start + GetCameraComponent()->GetForwardVector() * M_GrabDistance;
+	FHitResult Hit;
+
+	if (UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), Start, End, ObjectTypes, true,ActorsToIgnore, EDrawDebugTrace::ForDuration, Hit, true ))
+	{
+		if (Hit.GetActor()->GetClass()->IsChildOf(ATriggerActor::StaticClass()))
+		{
+			
+				if (HasAuthority())
+				{
+					ATriggerActor* TriggerActor= Cast<ATriggerActor>(Hit.GetActor());
+					if (TriggerActor == nullptr) return;
+
+					TriggerActor->M_SwitchPhysics.Broadcast(this);
+					
+					ServerRPC_PickupObject(Hit.GetComponent(), Hit.ImpactPoint, Hit.GetActor()->GetActorRotation());
+					M_bIsGrabbed = true;
+				}
+			
+		}
+		
+	}
+	DrawDebugLine(GetWorld(), Start, End, FColor::Blue, false, 4, 0, 3);
+	
+}
+
+void APlayerBaseClass::ServerRPC_DropObject_Implementation()
+{
+	if (HasAuthority())
+	{
+		M_PhysicsHandleComp->ReleaseComponent();
+		M_bIsGrabbed = false;
+		
+	}
+	
+}
 
 
 // Called every frame
 void APlayerBaseClass::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (M_bIsGrabbed)
+	{
+		ServerRPC_ObjectMove();
+		
+	}
 
 }
 
@@ -150,6 +241,7 @@ void APlayerBaseClass::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
     EnhancedInputComponent->BindAction(M_JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 	EnhancedInputComponent->BindAction(M_JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 	EnhancedInputComponent->BindAction(M_SprintAction, ETriggerEvent::Triggered, this, &APlayerBaseClass::Sprint);
+	EnhancedInputComponent->BindAction(M_GrabAction, ETriggerEvent::Triggered, this, &APlayerBaseClass::Grab);
   
 
 }

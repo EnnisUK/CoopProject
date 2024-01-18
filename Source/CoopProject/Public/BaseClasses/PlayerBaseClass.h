@@ -7,6 +7,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "InputActionValue.h"
+#include "PhysicsEngine/PhysicsHandleComponent.h"
+#include "Interfaces/NetworkPredictionInterface.h"
 
 
 #include "PlayerBaseClass.generated.h"
@@ -21,7 +23,6 @@ class COOPPROJECT_API APlayerBaseClass : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true", DisplayName = "Camera"))
 	UCameraComponent* M_Camera;
-
 
 public:
 	// Sets default values for this character's properties
@@ -48,6 +49,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"), meta = (DisplayName = "Sprint Action"))
 	class UInputAction* M_SprintAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"), meta = (DisplayName = "Grab Action"))
+	class UInputAction* M_GrabAction;
 	
 	
 
@@ -62,6 +66,11 @@ protected:
 	void Look(const FInputActionValue& Value);
 	
 	void Sprint();
+
+	void Grab();
+
+
+	
 	
 	//Server Functions
 
@@ -70,6 +79,23 @@ protected:
 
 	UFUNCTION(Server, Unreliable)
 	void ServerRPC_EndSprint();
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_GrabObject();
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_DropObject();
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ObjectMove();
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_PickupObject(UPrimitiveComponent* HitComponent, FVector Location, FRotator Rotation);
+	
+
+	
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	
 	
@@ -77,6 +103,22 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Sprinting"))
 	bool bIsSprinting;
+
+	UPROPERTY(BlueprintReadOnly, Replicated)
+	bool M_bIsGrabbed = false;
+
+	UPROPERTY(EditAnywhere)
+	float M_GrabDistance = 300;
+
+	UPROPERTY(EditAnywhere)
+	float M_HoldDistance = 200;
+	
+
+	UPROPERTY(EditAnywhere)
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite ,meta = (AllowPrivateAccess = "true" ,DisplayName = "PhysicsHandleComp"))
+	UPhysicsHandleComponent* M_PhysicsHandleComp;
 	
 
 public:	
@@ -85,6 +127,7 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
 
 	FORCEINLINE class UCameraComponent* GetCameraComponent() const { return M_Camera; }
 	FORCEINLINE class USpringArmComponent* GetSpringArmComponent() const { return M_SpringArm; }

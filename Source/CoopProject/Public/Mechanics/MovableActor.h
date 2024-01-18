@@ -8,6 +8,8 @@
 #include "GameFramework/Actor.h"
 #include "MovableActor.generated.h"
 
+
+
 UCLASS()
 class COOPPROJECT_API AMovableActor : public AActor
 {
@@ -41,5 +43,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+
 
 };
