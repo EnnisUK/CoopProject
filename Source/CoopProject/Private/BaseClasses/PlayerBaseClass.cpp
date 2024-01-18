@@ -14,7 +14,7 @@
 #include "Systems/MainGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Mechanics/MovableActor.h"
-#include "Mechanics/TriggerActor.h"
+#include "Mechanics/TriggerActor2.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -111,44 +111,120 @@ void APlayerBaseClass::ServerRPC_StartSprint_Implementation()
 
 void APlayerBaseClass::ServerRPC_EndSprint_Implementation()
 {
-	GetCharacterMovement()->MaxWalkSpeed = 700;
+	GetCharacterMovement()->MaxWalkSpeed = 600;
 }
 
 void APlayerBaseClass::Sprint()
 {
-	
-
 	if (bIsSprinting == false)
 	{
 		bIsSprinting = true;
-		GetCharacterMovement()->MaxWalkSpeed = 1200;
-		ServerRPC_StartSprint();
+		if (HasAuthority())
+		{
+			GetCharacterMovement()->MaxWalkSpeed = 1200;
+		}
+		else
+		{
+			ServerRPC_StartSprint();
+			GetCharacterMovement()->MaxWalkSpeed = 1200;
+		}
+		
 		GEngine->AddOnScreenDebugMessage(-1,2,FColor::Red,TEXT("StartedSprint"));
 	}
 	else
 	{
 		bIsSprinting = false;
-		GetCharacterMovement()->MaxWalkSpeed = 700;
-		ServerRPC_EndSprint();
+		if (HasAuthority())
+		{
+			GetCharacterMovement()->MaxWalkSpeed = 600;
+		}
+		else
+		{
+			ServerRPC_EndSprint();
+			GetCharacterMovement()->MaxWalkSpeed = 600;
+		}
 		GEngine->AddOnScreenDebugMessage(-1,2,FColor::Red,TEXT("EndedSprint"));
 	}
 }
 
 void APlayerBaseClass::Grab()
 {
-	if (!M_bIsGrabbed)
+	if (HasAuthority())
 	{
-		ServerRPC_GrabObject();
+		if (!M_bIsGrabbed)
+		{
+			Print(TEXT("Grabbed By Server"));
+			GrabObject();
+		}
+		else
+		{
+			Print(TEXT("Dropped By Server"));
+			DropObject();
+		}
 	}
 	else
 	{
-		ServerRPC_DropObject();
-		
+		if (!M_bIsGrabbed)
+		{
+			Print(TEXT("Grabbed By Client"));
+			ServerRPC_GrabObject();
+		}
+		else
+		{
+			Print(TEXT("Dropped by Client"));
+			ServerRPC_DropObject();
+		}
 	}
+
+}
+
+void APlayerBaseClass::Print(FString Text)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Orange, Text);
 }
 
 
+void APlayerBaseClass::GrabObject()
+{
+	FCollisionQueryParams QueryParams;
+	TArray<AActor*> ActorsToIgnore;
+	FVector Start = GetActorLocation();
+	FVector End = Start + GetCameraComponent()->GetForwardVector() * M_GrabDistance;
+	FHitResult Hit;
 
+	if (UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), Start, End, ObjectTypes, true,ActorsToIgnore, EDrawDebugTrace::ForDuration, Hit, true ))
+	{
+		if (Hit.GetActor()->GetClass()->IsChildOf(ATriggerActor2::StaticClass()))
+		{
+			M_TriggerActor = Cast<ATriggerActor2>(Hit.GetActor());
+				if (M_TriggerActor == nullptr) return;
+
+			
+				
+				PickupObject(Hit.GetComponent(), Hit.ImpactPoint, Hit.GetActor()->GetActorRotation());
+				M_bIsGrabbed = true;
+		}
+		
+	}
+	DrawDebugLine(GetWorld(), Start, End, FColor::Blue, false, 4, 0, 3);
+}
+
+void APlayerBaseClass::DropObject()
+{
+		M_PhysicsHandleComp->ReleaseComponent();
+		M_bIsGrabbed = false;
+}
+
+void APlayerBaseClass::ObjectMove()
+{
+	FVector TargetLocation = GetCameraComponent()->GetComponentLocation() + GetCameraComponent()->GetForwardVector() * M_HoldDistance;
+	M_PhysicsHandleComp->SetTargetLocationAndRotation(TargetLocation, GetOwner()->GetActorRotation());	
+}
+
+void APlayerBaseClass::PickupObject(UPrimitiveComponent* HitComponent, FVector Location, FRotator Rotation)
+{
+	M_PhysicsHandleComp->GrabComponentAtLocationWithRotation(HitComponent, NAME_None, Location, Rotation);
+}
 
 void APlayerBaseClass::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -168,7 +244,7 @@ void APlayerBaseClass::ServerRPC_ObjectMove_Implementation()
 	if (HasAuthority())
 	{
 		FVector TargetLocation = GetCameraComponent()->GetComponentLocation() + GetCameraComponent()->GetForwardVector() * M_HoldDistance;
-		M_PhysicsHandleComp->SetTargetLocationAndRotation(TargetLocation, GetOwner()->GetActorRotation());	
+		M_PhysicsHandleComp->SetTargetLocationAndRotation(TargetLocation, GetOwner()->GetActorRotation());
 	}
 
 }
@@ -183,15 +259,15 @@ void APlayerBaseClass::ServerRPC_GrabObject_Implementation()
 
 	if (UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), Start, End, ObjectTypes, true,ActorsToIgnore, EDrawDebugTrace::ForDuration, Hit, true ))
 	{
-		if (Hit.GetActor()->GetClass()->IsChildOf(ATriggerActor::StaticClass()))
+		if (Hit.GetActor()->GetClass()->IsChildOf(ATriggerActor2::StaticClass()))
 		{
 			
 				if (HasAuthority())
 				{
-					ATriggerActor* TriggerActor= Cast<ATriggerActor>(Hit.GetActor());
-					if (TriggerActor == nullptr) return;
-
-					TriggerActor->M_SwitchPhysics.Broadcast(this);
+					 M_TriggerActor = Cast<ATriggerActor2>(Hit.GetActor());
+					if (M_TriggerActor == nullptr) return;
+					
+					Print(UKismetSystemLibrary::GetDisplayName(M_PhysicsHandleComp->GetGrabbedComponent()));
 					
 					ServerRPC_PickupObject(Hit.GetComponent(), Hit.ImpactPoint, Hit.GetActor()->GetActorRotation());
 					M_bIsGrabbed = true;
@@ -223,7 +299,15 @@ void APlayerBaseClass::Tick(float DeltaTime)
 
 	if (M_bIsGrabbed)
 	{
-		ServerRPC_ObjectMove();
+		if (!HasAuthority())
+		{
+			ServerRPC_ObjectMove();
+		}
+		else
+		{
+			ObjectMove();
+		}
+		
 		
 	}
 

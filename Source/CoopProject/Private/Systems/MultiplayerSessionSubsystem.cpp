@@ -2,10 +2,13 @@
 
 
 #include "Systems/MultiplayerSessionSubsystem.h"
+
+#include "FindSessionsCallbackProxy.h"
 #include "OnlineSubsystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "FindSessionsCallbackProxy.h"
 #include "Online/OnlineSessionNames.h"
 
 UMultiplayerSessionSubsystem::UMultiplayerSessionSubsystem()
@@ -118,6 +121,8 @@ void UMultiplayerSessionSubsystem::CreateServer(const FString& ServerName)
 	M_SessionPtr->CreateSession(0, M_SessionName, SessionSetting);
 	
 }
+
+
 
 void UMultiplayerSessionSubsystem::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {

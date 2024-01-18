@@ -69,6 +69,7 @@ protected:
 
 	void Grab();
 
+	void Print(FString Text);
 
 	
 	
@@ -91,6 +92,18 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_PickupObject(UPrimitiveComponent* HitComponent, FVector Location, FRotator Rotation);
+	
+	    
+    	void GrabObject();
+    
+    	
+    	void DropObject();
+    
+    	
+    	void ObjectMove();
+    
+    	
+    	void PickupObject(UPrimitiveComponent* HitComponent, FVector Location, FRotator Rotation);
 	
 
 	
@@ -119,6 +132,8 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite ,meta = (AllowPrivateAccess = "true" ,DisplayName = "PhysicsHandleComp"))
 	UPhysicsHandleComponent* M_PhysicsHandleComp;
+
+	class ATriggerActor2* M_TriggerActor;
 	
 
 public:	

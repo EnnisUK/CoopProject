@@ -7,6 +7,7 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Widgets/SWidget.h"
 #include "OnlineSessionSettings.h"
+#include "Online/OnlineSessionNames.h"
 #include "MultiplayerSessionSubsystem.generated.h"
 
 
@@ -62,6 +63,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta =(DisplayName = SelectedMapString))
 	FString M_MapString;
 	
+
+	
 		//Functions
 
 	UFUNCTION(BlueprintCallable)
@@ -69,8 +72,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void CreateServer(const FString& ServerName);
-
-
 
 
 	// Delegates Functions
@@ -82,6 +83,7 @@ public:
 	void OnFindSessionComplete(bool bWasSuccessful);
 
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type JoinResult);
+
 
 	
 };
