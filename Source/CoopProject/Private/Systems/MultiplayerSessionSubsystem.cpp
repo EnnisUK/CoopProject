@@ -104,7 +104,7 @@ void UMultiplayerSessionSubsystem::CreateServer(const FString& ServerName)
 	FOnlineSessionSettings SessionSetting;
 	
 	SessionSetting.bIsDedicated = false;
-	SessionSetting.bShouldAdvertise = true;
+	SessionSetting.bShouldAdvertise = M_bShouldAdvertise;
 	SessionSetting.NumPublicConnections = 2;
 	SessionSetting.bUseLobbiesIfAvailable = true;
 	SessionSetting.bUsesPresence = true;

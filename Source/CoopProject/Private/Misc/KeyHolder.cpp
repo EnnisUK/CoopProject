@@ -64,6 +64,7 @@ void AKeyHolder::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	{
 		if (M_CollectableKeyRef->M_bIsCollected)
 		{
+			M_bUnlocked = true;
 			M_CollectableKeyRef->M_OnCollected.Broadcast();
 		}
 		ActivateKeyMesh();

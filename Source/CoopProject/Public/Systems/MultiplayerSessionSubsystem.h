@@ -52,6 +52,7 @@ public:
 	FString M_ServerNameToFind;
 
 	// Name of Session to Join
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FName M_SessionName;
 
 	UPROPERTY(BlueprintAssignable)
@@ -62,6 +63,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta =(DisplayName = SelectedMapString))
 	FString M_MapString;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Open?"))
+	bool M_bShouldAdvertise = true;
 	
 
 	
