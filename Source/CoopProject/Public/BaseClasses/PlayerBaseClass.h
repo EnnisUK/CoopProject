@@ -73,8 +73,6 @@ protected:
 	void Grab();
 
 	void Print(FString Text);
-
-	
 	
 	//Server Functions
 

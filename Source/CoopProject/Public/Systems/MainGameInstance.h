@@ -59,14 +59,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "ColourBlindSens"))
 	float M_ColourBlindSens;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "ColourMode"))
-	EColorVisionDeficiency M_ColourMode;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "ColourMode"))
+	//EColorVisionDeficiency M_ColourMode;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Brightness"))
 	float M_Gamma;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Player Location"))
 	FVector M_PlayerLocation;
-
+	
 	
 };

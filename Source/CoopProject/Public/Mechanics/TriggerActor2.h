@@ -6,6 +6,10 @@
 #include "Engine/StaticMeshActor.h"
 #include "TriggerActor2.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FHudOnShow);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FHudOnHide);
+
 /**
  * 
  */
@@ -16,5 +20,11 @@ class COOPPROJECT_API ATriggerActor2 : public AStaticMeshActor
 	
 public:
 	ATriggerActor2();
+
 	
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FHudOnShow M_ShowHud;
+	
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FHudOnShow M_HideHud;
 };

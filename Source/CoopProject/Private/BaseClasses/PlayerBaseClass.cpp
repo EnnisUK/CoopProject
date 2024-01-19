@@ -9,6 +9,7 @@
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Components/WidgetComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Particles/ParticleSystem.h"
 #include "Systems/MainGameInstance.h"
@@ -40,8 +41,7 @@ APlayerBaseClass::APlayerBaseClass()
 	
 	M_PhysicsHandleComp = CreateDefaultSubobject<UPhysicsHandleComponent>("PhysicsHandleComponent");
 	M_PhysicsHandleComp->SetIsReplicated(true);
-
-
+	
 
 }
 
@@ -49,8 +49,6 @@ APlayerBaseClass::APlayerBaseClass()
 void APlayerBaseClass::BeginPlay()
 {
 	Super::BeginPlay();
-
-
 	
 
 	if (APlayerController* PC = Cast<APlayerController>(Controller))
